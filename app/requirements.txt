@@ -1,0 +1,15 @@
+streamlit
+python-dotenv
+agno
+requests
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+httpx
+requests
+google-genai
+sqlalchemy
+pymongo
+pypdf
+chromadb

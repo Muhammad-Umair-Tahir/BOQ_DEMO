@@ -1,0 +1,24 @@
+.env
+__pycache__
+# app.py  # Commented out to track Streamlit reference
+
+
+uploads
+demo.py
+app2.py
+misc
+.gradio
+.vscode
+books
+app.py
+
+images
+app.zip
+user_preferences.json
+boq_preferences.json
+*.pyc
+tmp
+
+test.py
+test2.py
+designer_agent.py

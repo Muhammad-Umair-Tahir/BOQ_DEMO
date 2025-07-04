@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interface</title>
+    
+    <!-- GitHub Markdown CSS for consistent styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+    
+    <!-- Base styles for chat layout -->
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: url('https://www.transparenttextures.com/patterns/blueprint.png');
+            background-color: #0a0f29;
+            color: #e0e0e0;
+        }
+
+        /* Add Modal/Tutorial Styles */
+        #tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #tutorial-modal {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 700px;
+            width: 80%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+            border: 1px solid #333;
+        }
+        
+        #tutorial-modal h2 {
+            color: #007bff;
+            margin-top: 0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        #tutorial-modal h3 {
+            color: #0099ff;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        #tutorial-modal p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        #tutorial-modal ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        #tutorial-modal li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        #tutorial-modal .step {
+            background-color: #2a2a2a;
+            border-left: 4px solid #007bff;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        #tutorial-close {
+            display: block;
+            width: 120px;
+            margin: 20px auto 0;
+            padding: 12px 0;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #tutorial-close:hover {
+            background-color: #0056b3;
+        }
+        
+        .tutorial-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        #sidebar {
+            width: 250px;
+            background: #1e1e1e;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.5);
+        }
+
+        #sidebar h2 {
+            color: #fff;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        #sidebar input[type="text"], #sidebar input[type="file"] {
+            margin-bottom: 12px;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #2e2e2e;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        #sidebar button {
+            padding: 10px 16px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-bottom: 8px;
+        }
+
+        #sidebar button:hover {
+            background: #0056b3;
+        }
+
+        #chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            border-radius: 8px;
+            margin: 16px;
+            overflow: hidden;
+        }
+
+        /* Messages Section */
+        #messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #121212;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message.user {
+            background-color: #007bff;
+            color: #fff;
+            text-align: right;
+            margin-left: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.agent {
+            background-color: #333;
+            color: #e0e0e0;
+            text-align: left;
+            margin-right: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Input Section */
+        #input-container {
+            display: flex;
+            padding: 16px;
+            background: #1e1e1e;
+            border-top: 1px solid #333;
+        }
+
+        #input-container input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #2e2e2e;
+            color: #fff;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        #input-container button {
+            padding: 12px 16px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #input-container button:hover {
+            background: #0056b3;
+        }
+
+        /* Add these new styles for the disabled button */
+        #tutorial-close:disabled {
+            background-color: #6c757d;
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        
+        /* Progress indicator styles */
+        .button-timer {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+            margin-top: 5px;
+            height: 15px;
+        }
+        
+        /* Animation for the progress bar */
+        .progress-bar {
+            height: 4px;
+            background-color: #007bff;
+            width: 0%;
+            margin: 0 auto 10px;
+            transition: width 5s linear;
+        }
+        
+        /* Add these new styles for Markdown tables */
+        .message.agent table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            font-size: 14px;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+            table-layout: fixed; /* Fixed layout for better control */
+        }
+        
+        .message.agent th {
+            background-color: #333;
+            color: #fff;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #444;
+            word-break: break-word;
+        }
+        
+        .message.agent td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #444;
+            border-right: 1px solid #444;
+            color: #e0e0e0;
+            word-break: break-word;
+        }
+        
+        .message.agent tr:nth-child(even) {
+            background-color: #262626;
+        }
+        
+        .message.agent tr:hover {
+            background-color: #303030;
+        }
+        
+        /* Material breakdown styling */
+        .message.agent em {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #0099ff;
+            font-size: 15px;
+            font-weight: bold;
+        }
+        
+        /* Make proper headers for sections */
+        .message.agent h3 {
+            color: #007bff;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        
+        /* Special formatting for BOQ section headers */
+        .message.agent strong {
+            color: #00aaff;
+        }
+        
+        /* Make tables responsive */
+        .message.agent .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        /* Force Markdown to render correctly */
+        .message.agent pre {
+            white-space: pre-wrap;
+            background-color: #222;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        /* Override GitHub markdown theme for dark mode */
+        .markdown-body {
+            background-color: transparent !important;
+            color: #e0e0e0 !important;
+            font-family: 'Arial', sans-serif !important;
+            padding: 0 !important;
+        }
+        
+        .markdown-body h1, .markdown-body h2, .markdown-body h3, 
+        .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+            color: #007bff !important;
+            border-bottom-color: #444 !important;
+        }
+        
+        .markdown-body table {
+            display: table !important;
+            width: 100% !important;
+        }
+        
+        .markdown-body table tr {
+            background-color: #2a2a2a !important;
+            border-top: 1px solid #444 !important;
+        }
+        
+        .markdown-body table tr:nth-child(2n) {
+            background-color: #262626 !important;
+        }
+        
+        .markdown-body table th, .markdown-body table td {
+            border: 1px solid #444 !important;
+            padding: 8px 13px !important;
+        }
+        
+        .markdown-body table th {
+            background-color: #333 !important;
+        }
+        
+        .markdown-body pre {
+            background-color: #222 !important;
+        }
+        
+        .markdown-body code {
+            background-color: rgba(110, 118, 129, 0.4) !important;
+        }
+        
+        .markdown-body em {
+            color: #0099ff !important;
+        }
+    </style>
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Highlight.js for code syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    
+    <!-- Marked GFM extension for GitHub Flavored Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked-gfm-heading-id@3.0.4/lib/index.umd.js"></script>
+    
+    <!-- Add this script block for backend configuration -->
+    <script>
+        // This will be replaced by the backend when rendering the template
+        const BACKEND_CONFIG = {
+            baseUrl: "{{ backend_url }}",  // Will be injected by the backend template engine
+            apiVersion: "{{ api_version | default('v1') }}"
+        };
+    </script>
+</head>
+<body>
+    <!-- Tutorial Overlay -->
+    <div id="tutorial-overlay">
+        <div id="tutorial-modal">
+            <h2>Welcome to the AI Assistant Interface</h2>
+            
+            <h3>🔑 Getting Started</h3>
+            <div class="step">
+                <p><strong>Step 1:</strong> Enter your User ID and Session ID in the sidebar and click "Save".</p>
+                <p><small>These IDs help maintain conversation context across sessions.</small></p>
+            </div>
+            
+            <h3>📋 Interface Modes</h3>
+            <div class="step">
+                <p><strong>Interview Mode (Default):</strong> Ask questions about files, get explanations, and have general conversations.</p>
+                <p><strong>BOQ Mode:</strong> Generate detailed Bill of Quantities based on architectural analysis.</p>
+                <p>Switch between modes using the "Switch to BOQ" / "Switch to Interview" button in the sidebar.</p>
+            </div>
+            
+            <h3>📤 Uploading Files</h3>
+            <div class="step">
+                <p>To analyze architectural drawings or floor plans:</p>
+                <ol>
+                    <li>Click "Choose Files" in the sidebar</li>
+                    <li>Select one or multiple files (images or PDFs)</li>
+                    <li>Click "Upload" button</li>
+                </ol>
+                <p>The system will analyze the files and provide detailed information about rooms, dimensions, and architectural elements.</p>
+            </div>
+            
+            <h3>🏗️ Generating Bill of Quantities (BOQ)</h3>
+            <div class="step">
+                <p><strong>When to use:</strong> After uploading and analyzing architectural drawings, use BOQ mode to create detailed material quantity estimates.</p>
+                <ol>
+                    <li>Click "Switch to BOQ" in the sidebar</li>
+                    <li>Type "Generate BOQ based on the floor plans" or similar prompt</li>
+                    <li>Click "Send" or press Enter</li>
+                </ol>
+                <p>You'll receive a structured Bill of Quantities with material breakdowns.</p>
+            </div>
+            
+            <h3>💬 Asking Questions</h3>
+            <div class="step">
+                <p>After file analysis or BOQ generation, switch back to Interview mode to ask specific questions:</p>
+                <ul>
+                    <li>"How many bedrooms are in the floor plan?"</li>
+                    <li>"What's the total area of the kitchen?"</li>
+                    <li>"Explain the plumbing requirements for the bathroom"</li>
+                    <li>"What materials are needed for the exterior walls?"</li>
+                </ul>
+            </div>
+            
+            <!-- Add a progress bar above the button -->
+            <div class="progress-bar" id="read-progress"></div>
+            <div class="button-timer" id="timer-text">Please read the tutorial (5s)</div>
+            <button id="tutorial-close" disabled>Get Started</button>
+        </div>
+    </div>
+    
+    <!-- Help button to show tutorial again -->
+    <button class="tutorial-button" id="show-tutorial">?</button>
+
+    <!-- Your existing layout -->
+    <div id="sidebar">
+        <h2>Settings</h2>
+        <input type="text" id="user-id" placeholder="Enter your User ID" />
+        <input type="text" id="session-id" placeholder="Enter your Session ID" />
+        <button id="save-settings">Save</button>
+        <button id="toggle-boq">Switch to BoQ</button>
+        <h2>Upload Files</h2>
+        <input type="file" id="file-input" multiple />
+        <button id="upload-button">Upload</button>
+    </div>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Type your message here..." />
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration variables
+        const BACKEND_URL = BACKEND_CONFIG.baseUrl || window.location.origin;
+        
+        // Define API endpoints using the dynamic backend URL
+        const API_ENDPOINTS = {
+            interview: `${BACKEND_URL}/api/interview`,
+            boq: `${BACKEND_URL}/api/generate-boq`,
+            analyze: `${BACKEND_URL}/api/analyze`
+        };
+        
+        const messagesContainer = document.getElementById('messages');
+        const userIdInput = document.getElementById('user-id');
+        const sessionIdInput = document.getElementById('session-id');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+        const toggleBoqButton = document.getElementById('toggle-boq');
+        const tutorialOverlay = document.getElementById('tutorial-overlay');
+        const tutorialClose = document.getElementById('tutorial-close');
+        const showTutorial = document.getElementById('show-tutorial');
+
+        // Tutorial functionality
+        tutorialClose.addEventListener('click', () => {
+            tutorialOverlay.style.display = 'none';
+        });
+
+        showTutorial.addEventListener('click', () => {
+            tutorialOverlay.style.display = 'flex';
+        });
+
+        // Show tutorial on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            tutorialOverlay.style.display = 'flex';
+            enableButtonAfterDelay();
+            
+            // Log the backend configuration for debugging
+            console.log("Backend Configuration:", BACKEND_CONFIG);
+            console.log("Using backend URL:", BACKEND_URL);
+        });
+
+        // Your existing JavaScript code
+        let userId = '';
+        let sessionId = '';
+        let currentEndpoint = API_ENDPOINTS.interview; // Default to interview endpoint using dynamic URL
+
+        document.getElementById('save-settings').addEventListener('click', () => {
+            userId = userIdInput.value.trim();
+            sessionId = sessionIdInput.value.trim();
+            if (!userId || !sessionId) {
+                alert('Please enter both User ID and Session ID.');
+            } else {
+                alert('Settings saved!');
+            }
+        });
+
+        toggleBoqButton.addEventListener('click', () => {
+            if (currentEndpoint === API_ENDPOINTS.interview) {
+                currentEndpoint = API_ENDPOINTS.boq;
+                toggleBoqButton.textContent = 'Switch to Interview';
+            } else {
+                currentEndpoint = API_ENDPOINTS.interview;
+                toggleBoqButton.textContent = 'Switch to BoQ';
+            }
+        });
+
+        async function sendMessage() {
+            const userMessage = userInput.value.trim();
+
+            if (!userMessage || !userId || !sessionId) {
+                alert('Please enter a message, User ID, and Session ID.');
+                return;
+            }
+
+            displayMessage(userMessage, 'user');
+            userInput.value = '';
+
+            const spinnerId = displaySpinner();
+
+            try {
+                console.log("[DEBUG] Sending request to:", currentEndpoint);
+                console.log("[DEBUG] Payload:", {
+                    data: userMessage,
+                    user_id: userId,
+                    session_id: sessionId
+                });
+
+                const response = await fetch(currentEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ data: userMessage, user_id: userId, session_id: sessionId })
+                });
+
+                console.log("[DEBUG] Response status:", response.status);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log("[DEBUG] Response data:", result);
+
+                    // Check if the response contains the BoQ
+                    if (result.boq) {
+                        replaceSpinnerWithMarkdown(spinnerId, result.boq);
+                    } else if (result.content) {
+                        replaceSpinnerWithMarkdown(spinnerId, result.content);
+                    } else {
+                        replaceSpinnerWithMessage(spinnerId, 'No BoQ data received.');
+                    }
+                } else {
+                    replaceSpinnerWithMessage(spinnerId, 'Error: Unable to get a response from the server.');
+                }
+            } catch (error) {
+                console.error("[DEBUG] Fetch error:", error);
+                replaceSpinnerWithMessage(spinnerId, 'Error: Unable to connect to the server.');
+            }
+        }
+
+        async function uploadFiles() {
+            const files = fileInput.files;
+
+            if (!files.length || !userId || !sessionId) {
+                alert('Please select files, and enter User ID and Session ID.');
+                return;
+            }
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('files', file);
+            }
+            formData.append('user_id', userId);
+            formData.append('session_id', sessionId);
+
+            const spinnerId = displaySpinner();
+
+            try {
+                const response = await fetch(API_ENDPOINTS.analyze, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    replaceSpinnerWithMarkdown(spinnerId, result.content || 'Files uploaded successfully.');
+                } else {
+                    replaceSpinnerWithMessage(spinnerId, 'Error: Unable to upload files.');
+                }
+            } catch (error) {
+                replaceSpinnerWithMessage(spinnerId, 'Error: Unable to connect to the server.');
+            }
+        }
+
+        function displaySpinner() {
+            const spinnerElement = document.createElement('div');
+            spinnerElement.className = 'message agent';
+            spinnerElement.innerHTML = '<div class="spinner"></div>';
+            messagesContainer.appendChild(spinnerElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            return spinnerElement;
+        }
+
+        function replaceSpinnerWithMessage(spinnerElement, message) {
+            spinnerElement.innerHTML = message;
+        }
+
+        function replaceSpinnerWithMarkdown(spinnerElement, markdown) {
+            if (!markdown) {
+                spinnerElement.innerHTML = 'No response received.';
+                return;
+            }
+            
+            // Fix any table format issues in the markdown before parsing
+            let fixedMarkdown = markdown;
+            
+            // 1. Ensure proper table formatting by adding proper pipe separators and newlines
+            const tableRegex = /(\|\s*[\w\.\s-]+\s*)+\|/g;
+            fixedMarkdown = fixedMarkdown.replace(tableRegex, function(match) {
+                // Make sure tables have proper formatting
+                return match.trim();
+            });
+            
+            // 2. Ensure Material Breakdown headers are properly formatted
+            fixedMarkdown = fixedMarkdown.replace(/Material Breakdown for ([\d\.]+)[\s–-]+(.*)/g, 
+                "*Material Breakdown for $1 – $2*");
+                
+            // 3. Ensure section headers are properly formatted with header markdown
+            fixedMarkdown = fixedMarkdown.replace(/(\d+\.\d+)\s+([\w\s&]+)\s*\|/g, 
+                "### $1 $2\n\n|");
+                
+            // Configure marked options for better table handling
+            marked.setOptions({
+                gfm: true,              // GitHub Flavored Markdown for tables
+                breaks: true,           // Convert line breaks to <br>
+                headerIds: true,        // Add IDs to headers
+                mangle: false,          // Don't mangle header IDs
+                pedantic: false,        // Don't use pedantic rules
+                sanitize: false,        // Don't sanitize HTML
+                smartLists: true,       // Use smart list behavior
+                smartypants: false,     // Don't use "smart" punctuation
+                xhtml: false            // Don't use XHTML
+            });
+            
+            try {
+                // Parse the markdown content
+                const parsedContent = marked.parse(fixedMarkdown);
+                
+                // Set the inner HTML with the parsed content
+                spinnerElement.innerHTML = parsedContent;
+                
+                // Find all tables and wrap them in a container for responsiveness
+                const tables = spinnerElement.querySelectorAll('table');
+                tables.forEach(table => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-container';
+                    
+                    // Get the parent node and replace the table with the wrapper
+                    const parent = table.parentNode;
+                    parent.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                });
+                
+                // Scroll to the bottom after content is rendered
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } catch (error) {
+                console.error("Error parsing markdown:", error);
+                spinnerElement.innerHTML = markdown; // Fallback to raw text
+            }
+        }
+
+        function displayMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${sender}`;
+            messageElement.textContent = message;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Timed button enabling for tutorial
+        const tutorialCloseBtn = document.getElementById('tutorial-close');
+        const timerText = document.getElementById('timer-text');
+        const progressBar = document.getElementById('read-progress');
+        
+        // Function to enable the button after delay
+        function enableButtonAfterDelay() {
+            let secondsLeft = 5;
+            
+            // Start with disabled button
+            tutorialCloseBtn.disabled = true;
+            
+            // Start the progress bar animation
+            setTimeout(() => {
+                progressBar.style.width = '100%';
+            }, 50); // Small delay to ensure transition works
+            
+            // Update the timer text every second
+            const interval = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(interval);
+                    tutorialCloseBtn.disabled = false;
+                    timerText.textContent = "You can proceed now!";
+                    tutorialCloseBtn.focus(); // Focus on the button for accessibility
+                } else {
+                    timerText.textContent = `Please read the tutorial (${secondsLeft}s)`;
+                }
+            }, 1000);
+        }
+        
+        // Initialize the timer when the document is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            tutorialOverlay.style.display = 'flex';
+            enableButtonAfterDelay();
+        });
+        
+        // Attach event listeners
+        sendButton.addEventListener('click', sendMessage);
+        uploadButton.addEventListener('click', uploadFiles);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Configure marked with the correct options and extensions for tables
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configure marked with GitHub flavored Markdown
+            marked.use({
+                gfm: true,
+                breaks: true,
+                pedantic: false,
+                headerIds: true,
+                mangle: false
+            });
+            
+            // Initialize hljs for code highlighting
+            hljs.highlightAll();
+        });
+        
+        function replaceSpinnerWithMarkdown(spinnerElement, markdown) {
+            if (!markdown) {
+                spinnerElement.innerHTML = 'No response received.';
+                return;
+            }
+            
+            try {
+                // Prepare the container with markdown-body class for GitHub styling
+                spinnerElement.className = 'message agent markdown-body';
+                
+                // Process the markdown to fix some common formatting issues with BOQ tables
+                let processedMarkdown = markdown;
+                
+                // Fix for BOQ tables with missing proper Markdown table formatting
+                // This ensures the tables are properly delimited with | characters
+                processedMarkdown = processedMarkdown.replace(/(\d+\.\d+)\s+([\w\s&]+)\s*\|\s*([^\|]+)\s*\|\s*([^\|]+)\s*\|\s*([^\|]+)\s*\|\s*([^\|]+)/g, 
+                    "### $1 $2\n\n| Item No. | Description | Unit | Quantity | Notes |\n|---------|-------------|------|----------|-------|\n| $1 | $3 | $4 | $5 | $6 |");
+                
+                // Ensure Material Breakdown headers are properly formatted
+                processedMarkdown = processedMarkdown.replace(/Material Breakdown for ([\d\.]+)[\s–-]+(.*)/g, 
+                    "*Material Breakdown for $1 – $2*");
+                
+                // Parse markdown
+                const parsedHtml = marked.parse(processedMarkdown);
+                spinnerElement.innerHTML = parsedHtml;
+                
+                // Apply syntax highlighting to any code blocks
+                const codeBlocks = spinnerElement.querySelectorAll('pre code');
+                codeBlocks.forEach(block => {
+                    hljs.highlightElement(block);
+                });
+                
+                // Scroll to the bottom after content is rendered
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } catch (error) {
+                console.error("Error parsing markdown:", error);
+                spinnerElement.innerHTML = markdown; // Fallback to raw text
+            }
+        }
+    </script>
+</body>
+</html>
